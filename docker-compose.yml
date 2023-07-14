@@ -5,7 +5,6 @@ services:
     build:
       context: pgedge-base
       args:
-        PGDATABASE: test
         PGUSER: postgres
     deploy:
       # one wierd trick for creating a base image to use below
