@@ -21,7 +21,7 @@ function subdomain
 
 set -x
 # start up postgres
-su "${PGUSER}" -c '/opt/pg16/bin/pg_ctl start -D /opt/pg16/data'
+su "${PGUSER}" -c '/opt/postgres/bin/pg_ctl start -D /opt/postgres/data'
 
 # As a publisher, create my own node
 psql -c "SELECT spock.node_create(node_name:='$(subdomain $(my_ip))', dsn:='host=$(my_ip) port=5432 dbname=${PGDATABASE}')"
