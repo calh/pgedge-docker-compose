@@ -11,10 +11,12 @@ function my_peer_ips
   dig +short writer |sort -n |grep -v $(my_ip)
 }
 
-# return the container's name from the given IP address
+# return the container's name from the given IP address.
+# Also strip off the prepended name that Docker Compose 
+# adds from the project directory name
 function subdomain
 {
-  dig -x "$1" +short | cut -d\. -f1
+  dig -x "$1" +short | cut -d\. -f1 | sed 's|.*\(writer_.*\)$|\1|'
 }
 
 set -x
