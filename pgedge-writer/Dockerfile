@@ -1,4 +1,4 @@
-FROM pgedge_pgedge-base:latest
+FROM pgedge-base:latest
 
 ARG PGDATABASE 
 ENV PGDATABASE $PGDATABASE

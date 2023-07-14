@@ -1,6 +1,7 @@
 version: "3"
 services:
   base:
+    image: pgedge-base
     build:
       context: pgedge-base
       args:
