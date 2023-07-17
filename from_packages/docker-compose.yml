@@ -1,0 +1,26 @@
+version: "3"
+services:
+  base:
+    image: pgedge-base
+    build:
+      context: pgedge-base
+      args:
+        PGUSER: postgres
+    deploy:
+      # one wierd trick for creating a base image to use below
+      # but not actually start any containers with this service
+      mode: replicated
+      replicas: 0
+  writer:
+    build:
+      context: pgedge-writer
+      args:
+        PGDATABASE: test
+        PGUSER: postgres
+    deploy:
+      mode: replicated
+      replicas: 3
+# TODO:
+# * read only replicas
+# * pgcat2 load balancer
+# * pgmanage web UI
