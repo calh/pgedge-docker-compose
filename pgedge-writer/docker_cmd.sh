@@ -11,6 +11,19 @@ function my_peer_ips
   dig +short writer |sort -n |grep -v $(my_ip)
 }
 
+# If we need a count of how many writer replicas
+# we've been scaled to in Docker Compose
+function writer_count
+{
+  dig +short writer | wc -l
+}
+
+# writer_count - 1 
+function peer_count
+{
+  expr $(writer_count) - 1
+}
+
 # return the container's name from the given IP address.
 # Also strip off the prepended name that Docker Compose 
 # adds from the project directory name
@@ -62,18 +75,31 @@ for ip in $(my_peer_ips); do
   psql -c "SELECT spock.sub_wait_for_sync('${subscription}')"
 done
 
-#sleep 10
+# Wait for all of my peers to finish catching up their subscription replication slots
+for ip in $(my_peer_ips); do
+  while [[ $(psql -h "${ip}" -t -c "select count(*) from pg_replication_slots" |head -1 | tr -d ' ') != "$(peer_count)" ]]; do
+    echo "Waiting for ${ip} to finish catching up on replication..."
+    sleep 3
+  done
+done
+
+sleep 10
 # Create a hello world record from myself!
 
 # Problem:  race condition where we try to insert id==1 due
 #           to the sequence not replicating fast enough
-#psql -c "insert into test_table (val) values('hello world from writer $(subdomain $(my_ip))')"
+psql -c "insert into test_table (val) values('hello world from writer $(subdomain $(my_ip))')"
 
 # Problem:  Causes `ERROR: tuple concurrently updated`
 #       Seems less frequent though...
-psql -c "insert into test_table (val)
-  values('hello world from writer $(subdomain $(my_ip))');
-  select * from spock.sync_seq('test_table_id_seq')"
+#psql -c "insert into test_table (val)
+#  values('hello world from writer $(subdomain $(my_ip))');
+#  select * from spock.sync_seq('test_table_id_seq')"
+
+# Problem:  Using a transaction just seems to change the error message from
+#   "tuple concurrently updated" to "conflict resolution: keep local"
+#   One record still fails.
+#psql -c "begin ; insert into test_table (val) values('hello world from writer $(subdomain $(my_ip))') ; commit"
 
 psql -c "select * from test_table"
 

@@ -25,7 +25,7 @@ services:
         PGUSER: postgres
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 3
 # TODO:
 # * read only replicas
 # * pgcat2 load balancer
