@@ -1,0 +1,10 @@
+FROM rust:1 AS builder
+
+RUN git clone --depth=1 https://github.com/pgEdge/pgcat2.git \
+  && cd pgcat2 \
+  && cargo build --release
+
+FROM pgedge-base:latest
+COPY --from=builder /pgcat2/target/release/pgcat /opt/postgres/bin/pgcat
+COPY pgcat.toml /etc/pgcat/pgcat.toml
+CMD ["/opt/postgres/bin/pgcat"]
