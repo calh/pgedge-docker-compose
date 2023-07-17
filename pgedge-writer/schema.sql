@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS public.test_table 
 (
-  id SERIAL PRIMARY KEY, 
+  id BIGSERIAL PRIMARY KEY, 
   val text
 );
 
