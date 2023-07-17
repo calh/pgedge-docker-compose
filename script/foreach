@@ -1,0 +1,13 @@
+#!/bin/bash
+# Quick method to run a command across each service replica group
+#  IE:  ./script/foreach writer psql "select * from test_table"
+
+group=$1
+shift
+
+for container_id in $(docker-compose ps -q $group); do
+  container=$(docker inspect -f '{{.Name}}' $container_id)
+  echo "$container"
+  docker exec -ti $container "$@" 
+done
+

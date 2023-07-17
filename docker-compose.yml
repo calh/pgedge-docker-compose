@@ -6,6 +6,12 @@ services:
       context: pgedge-base
       args:
         PGUSER: postgres
+        # github branch version of spock
+        #   v3.1.1 has a compile error against pg16 against EvalPlanQualInit
+        #SPOCK_BRANCH: v3.1.1
+        SPOCK_BRANCH: main
+        # Choose 15 or 16
+        PG_MAJOR_VERSION: 16
     deploy:
       # one wierd trick for creating a base image to use below
       # but not actually start any containers with this service
