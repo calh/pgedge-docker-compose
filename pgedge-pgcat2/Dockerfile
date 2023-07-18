@@ -7,4 +7,4 @@ RUN git clone --depth=1 https://github.com/pgEdge/pgcat2.git \
 FROM pgedge-base:latest
 COPY --from=builder /pgcat2/target/release/pgcat /opt/postgres/bin/pgcat
 COPY pgcat.toml /etc/pgcat/pgcat.toml
-CMD ["/opt/postgres/bin/pgcat"]
+CMD ["/opt/postgres/bin/pgcat /etc/pgcat/pgcat.toml"]

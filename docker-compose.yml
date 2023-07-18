@@ -26,6 +26,16 @@ services:
     deploy:
       mode: replicated
       replicas: 3
+  reader:
+    build:
+      context: pgedge-reader
+      args:
+        PGDATABASE: test
+        PGUSER: postgres
+    deploy:
+      mode: replicated
+      replicas: 3
+      #  pgcat2:
 # TODO:
 # * read only replicas
 # * pgcat2 load balancer

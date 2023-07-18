@@ -55,3 +55,4 @@ RUN cd /opt/spock \
   && make -j$(cat /proc/cpuinfo |grep processor |wc -l) \
   && make install 
 
+COPY bash_functions.sh /
