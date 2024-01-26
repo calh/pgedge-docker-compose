@@ -29,7 +29,7 @@ for writer in ${writers[@]}; do
       docker exec -i $writer psql -c "insert into test_table (val) SELECT random()::text from generate_series(1,$records)"
     done
     elapsed=$(expr "$(date '+%s')" - "$start")
-    wps=$(expr "$records" / "$elapsed")
+    wps=$(expr \( "$n" \* "$records" \) / "$elapsed")
     echo "Finished on $writer in $elapsed seconds, $wps writes per second"
   ) &
 done
