@@ -13,7 +13,7 @@ Directories:
 Branches:
 
 * `from_source` - builds postgres and spock from source.  Keeping this locked to demo a bug.
-
+* `snowflake_collision` - Locking this to show snowflake causing collisions
 
 ### New -- Snowflake Support
 
