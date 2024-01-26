@@ -31,6 +31,15 @@ function writer_peer_count
   expr $(writer_count) - 1
 }
 
+# When checking the replication status, we need to know
+# how many machines (besides ourselves) should be 
+# in the replication slots.  IE:  the total count
+# of readers and writers, minus ourselves.
+function replicate_count
+{
+  expr $(dig +short writer | wc -l) + $(dig +short reader | wc -l) - 1
+}
+
 # return the container's name from the given IP address.
 # Strip off the prepended name that Docker Compose
 # adds from the project directory name.
@@ -66,3 +75,8 @@ function my_writer_ip
   dig "$(my_writer_hostname)" +short
 }
 
+# List of the IP addresses of all the writer nodes
+function all_writer_ips
+{
+  dig +short writer | sort -n
+}

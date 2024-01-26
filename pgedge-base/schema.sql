@@ -6,7 +6,8 @@ CREATE SEQUENCE public.test_table_id_seq AS bigint;
 
 CREATE TABLE IF NOT EXISTS public.test_table 
 (
-  id bigint DEFAULT nextval('test_table_id_seq'::regclass) NOT NULL,
+--  id bigint DEFAULT nextval('test_table_id_seq'::regclass) NOT NULL,
+  id bigint DEFAULT snowflake.nextval('test_table_id_seq'::regclass) NOT NULL,
   val text
 );
 

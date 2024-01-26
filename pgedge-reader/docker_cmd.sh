@@ -7,7 +7,12 @@ set -x
 # start up postgres
 su "${PGUSER}" -c '/opt/postgres/bin/pg_ctl start -D /opt/postgres/data'
 
-#sleep infinity
+# Just on writer nodes, set our snowflake.node number based on our
+# hostname that Docker Compose gave us.
+# IE:  writer_2 gets a snowflake.node=2
+psql -c "ALTER SYSTEM SET snowflake.node = 1$(my_host_number)"
+psql -c "SELECT pg_reload_conf()"
+
 
 # As a subscriber, I still need my own local node created
 psql -c "
@@ -17,56 +22,59 @@ psql -c "
   )
   "
 
-# Wait for my writer to finish creating their publisher node
-while [[ $(psql -h "$(my_writer_ip)" -t -c "select count(*) from spock.node_info()" |head -1 | tr -d ' ') != "1" ]]; do
-  echo "Waiting for $(my_writer_hostname) to finish creating its publisher node..."
+echo "HERE"
+all_writer_ips
+
+# Wait for all writes to finish creating publisher nodes
+for ip in $(all_writer_ips); do
+  while [[ $(psql -h "${ip}" -t -c "select count(*) from spock.node_info()" |head -1 | tr -d ' ') != "1" ]]; do
+    echo "Waiting for ${ip} ($(short_subdomain ${ip})) to finish creating its publisher node..."
   sleep 3
+  done
 done
 
 # As a subscriber, read from my writer
-subscription="${PGDATABASE}_$(my_writer_shortname)_to_$(short_subdomain $(my_ip))"
-psql -c "
-  SELECT spock.sub_create(
-    subscription_name := '${subscription}',
-    forward_origins := '{}',
-    synchronize_structure := true,
-    provider_dsn := 'host=$(my_writer_ip) port=5432 dbname=${PGDATABASE}'
-  )
-"
-psql -c "SELECT spock.wait_slot_confirm_lsn(NULL, NULL)"
-psql -c "SELECT spock.sub_wait_for_sync('${subscription}')"
+# NOTE:  I screwed this up.  This method only receives replication from one
+# writer.  If I have 3 writers, I only receive 1/3 of the records.
+#subscription="${PGDATABASE}_$(my_writer_shortname)_to_$(short_subdomain $(my_ip))"
+#psql -c "
+#  SELECT spock.sub_create(
+#    subscription_name := '${subscription}',
+#    forward_origins := '{}',
+#    synchronize_structure := true,
+#    provider_dsn := 'host=$(my_writer_ip) port=5432 dbname=${PGDATABASE}'
+#  )
+#"
+#psql -c "SELECT spock.wait_slot_confirm_lsn(NULL, NULL)"
+#psql -c "SELECT spock.sub_wait_for_sync('${subscription}')"
 
-# Wait for all of my peers to finish catching up their subscription replication slots
-#for ip in $(my_peer_ips); do
-#  while [[ $(psql -h "${ip}" -t -c "select count(*) from pg_replication_slots" |head -1 | tr -d ' ') != "$(peer_count)" ]]; do
-#    echo "Waiting for ${ip} to finish catching up on replication..."
-#    sleep 3
-#  done
-#done
+for ip in $(all_writer_ips); do
+  subscription="${PGDATABASE}_$(short_subdomain ${ip})_to_$(short_subdomain $(my_ip))"
+  psql -c "
+    SELECT spock.sub_create(
+      subscription_name := '${subscription}',
+      forward_origins := '{}',
+      provider_dsn := 'host=${ip} port=5432 dbname=${PGDATABASE}'
+    )
+  "
+  # This is too aggressive of a wait with multi-master and multi-slave
+  #psql -c "SELECT spock.wait_slot_confirm_lsn(NULL, NULL)"
+  psql -c "SELECT spock.sub_wait_for_sync('${subscription}')"
+done
 
-#sleep 10
-# Create a hello world record from myself!
+# Wait for all of the writers to finish catching up their subscription replication slots
+for ip in $(all_writer_ips); do
+  # replicate_count is all writers + all readers - 1  (myself)
+  while [[ $(psql -h "${ip}" -t -c "select count(*) from pg_replication_slots" |head -1 | tr -d ' ') != "$(replicate_count)" ]]; do
+    echo "Waiting for ${ip} ($(short_subdomain ${ip})) to finish catching up on replication..."
+    sleep 3
+  done
+done
 
-# Problem:  race condition where we try to insert id==1 due
-#           to the sequence not replicating fast enough
-#psql -c "insert into test_table (val) values('hello world from writer $(short_subdomain $(my_ip))')"
+# Wait a bit for masters to insert records
+sleep 10
 
-# Problem:  Causes `ERROR: tuple concurrently updated`
-#       Seems less frequent though...
-#psql -c "insert into test_table (val)
-#  values('hello world from writer $(short_subdomain $(my_ip))');
-#  select * from spock.sync_seq('test_table_id_seq')"
-
-# Problem:  Using a transaction just seems to change the error message from
-#   "tuple concurrently updated" to "conflict resolution: keep local"
-#   One record still fails.
-#psql -c "begin ; insert into test_table (val) values('hello world from writer $(short_subdomain $(my_ip))') ; commit"
-
-#psql -c "select * from test_table"
-
-# Sleep a second and then select again
-#sleep 1
-#psql -c "select * from test_table"
+psql -c "select * from test_table"
 
 # Sleep forever
 sleep infinity

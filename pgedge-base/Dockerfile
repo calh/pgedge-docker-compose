@@ -42,6 +42,11 @@ RUN adduser "${PGUSER}" \
   && ./configure --prefix=/opt/postgres \ 
   && make -j$(cat /proc/cpuinfo |grep processor |wc -l) \
   && make install \
+  && cd /opt/postgres.source/contrib \
+  && git clone https://github.com/pgEdge/snowflake.git \
+  && cd /opt/postgres.source/contrib/snowflake \
+  && make \
+  && make install \
   && chown -R "${PGUSER}:${PGUSER}" /opt/postgres \
   && su postgres -c '/opt/postgres/bin/pg_ctl init -D /opt/postgres/data' \
   && rm -Rf /opt/postgres.source
@@ -56,3 +61,4 @@ RUN cd /opt/spock \
   && make install 
 
 COPY bash_functions.sh /
+COPY schema.sql /
