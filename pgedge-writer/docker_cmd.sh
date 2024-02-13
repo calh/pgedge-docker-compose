@@ -27,7 +27,8 @@ psql -c "
 
 #psql -c "create table if not exists public.test_table (id SERIAL PRIMARY KEY, val text)"
 psql -c "SELECT spock.repset_add_all_tables('default', ARRAY['public'])"
-psql -c "SELECT spock.repset_add_all_seqs('default', ARRAY['public'])"
+# Don't replicate sequences when using snowflakes
+#psql -c "SELECT spock.repset_add_all_seqs('default', ARRAY['public'])"
 
 # Wait for all of my peers to finish creating their publisher node
 for ip in $(my_peer_ips); do
