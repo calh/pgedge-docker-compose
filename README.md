@@ -29,10 +29,6 @@ $ ./script/stress_test_writer.sh 20 20000
 /pgedge-docker-compose_writer_3: INSERT 0 20000
 /pgedge-docker-compose_writer_2: INSERT 0 20000
 /pgedge-docker-compose_writer_2: INSERT 0 20000
-/pgedge-docker-compose_writer_1: ERROR:  duplicate key value violates unique constraint "test_table_pkey"
-DETAIL:  Key (id)=(141552280481566720) already exists.
-/pgedge-docker-compose_writer_1: INSERT 0 20000
-/pgedge-docker-compose_writer_3: INSERT 0 20000
 ```
 
 ```
@@ -44,11 +40,3 @@ records is how many records to insert for each iteration
 This will concurrently perform the test against all writers
 ```
 
-You can check the contents of a duplicate key with:
-
-```
-test=# select snowflake.format(141552280481566720);
-                           format                            
--------------------------------------------------------------
- {"ts": "2024-01-26 14:38:13.581+00", "node": 1, "count": 0}
-```
